@@ -32,6 +32,8 @@ class ASTCodeGenerator(object):
             src = [Template(_PROLOGUE_COMMENT).substitute(
                 cfg_filename=self.cfg_filename)]
 
+            src += [_PROLOGUE_CODE]
+
             src += [node_cfg.generate_source() for node_cfg in self.node_cfg]
 
             src = '\n\n'.join(src)
@@ -158,6 +160,9 @@ _PROLOGUE_COMMENT = (
     "# Copyright (C) 2008-2012, Eli Bendersky\n"
     "# License: BSD\n"
     "#-----------------------------------------------------------------\n")
+
+_PROLOGUE_CODE = (
+    'from astlib import Node\n')
 
 
 def main():

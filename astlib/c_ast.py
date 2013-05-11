@@ -16,6 +16,9 @@
 #-----------------------------------------------------------------
 
 
+from astlib import Node
+
+
 class ArrayDecl(Node):
     def __init__(self, type, dim, coord=None):
         self.type = type
