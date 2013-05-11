@@ -1,8 +1,8 @@
 #-----------------------------------------------------------------
 # _ast_gen.py
 #
-# Generates the AST Node classes from a specification given in
-# a .yaml file
+# Generates the AST Node classes from a specification given in a
+# .cfg file
 #
 # The design of this module was inspired by astgen.py from the
 # Python 2.5 code-base.
@@ -15,7 +15,7 @@ from string import Template
 
 
 class ASTCodeGenerator(object):
-    def __init__(self, cfg_filename='_c_ast.cfg'):
+    def __init__(self, cfg_filename):
         """
         Initialize the code generator from a configuration file.
         """
@@ -23,25 +23,27 @@ class ASTCodeGenerator(object):
         self.node_cfg = [NodeCfg(name, contents) for (name, contents)
                          in self.parse_cfgfile(cfg_filename)]
 
-    def generate(self, file=None):
+    def generate_pyfile(self, py_filename):
         """
         Generates the code into file, an open file buffer.
         """
-        src = [Template(_PROLOGUE_COMMENT).substitute(
-            cfg_filename=self.cfg_filename)]
 
-        src += [node_cfg.generate_source() for node_cfg in self.node_cfg]
+        with open(py_filename, 'w') as f:
+            src = [Template(_PROLOGUE_COMMENT).substitute(
+                cfg_filename=self.cfg_filename)]
 
-        src = '\n\n'.join(src)
+            src += [node_cfg.generate_source() for node_cfg in self.node_cfg]
 
-        file.write(src)
+            src = '\n\n'.join(src)
 
-    def parse_cfgfile(self, filename):
+            f.write(src)
+
+    def parse_cfgfile(self, cfg_filename):
         """
         Parse the configuration file and yield pairs of (name, contents)
         for each node.
         """
-        with open(filename, "r") as f:
+        with open(cfg_filename, "r") as f:
             for line in f:
                 line = line.strip()
                 if not line or line.startswith('#'):
@@ -51,7 +53,7 @@ class ASTCodeGenerator(object):
                 rbracket_i = line.find(']')
                 if not 1 < colon_i < lbracket_i < rbracket_i:
                     raise RuntimeError(
-                        "Invalid line in %s:\n%s\n" % (filename, line))
+                        "Invalid line in %s:\n%s\n" % (cfg_filename, line))
 
                 name = line[:colon_i]
                 val = line[lbracket_i + 1:rbracket_i]
@@ -60,7 +62,7 @@ class ASTCodeGenerator(object):
 
 
 class NodeCfg(object):
-    """ 
+    """
     Node configuration.
 
     name: node name
@@ -157,7 +159,24 @@ _PROLOGUE_COMMENT = (
     "# License: BSD\n"
     "#-----------------------------------------------------------------\n")
 
+
+def main():
+    import os
+    import argparse
+
+    argparser = argparse.ArgumentParser(
+        description='Convert a .cfg file to a python AST framework')
+    argparser.add_argument('filename', type=str)
+    argparser.add_argument('-o', '--outfile', type=str)
+    args = argparser.parse_args()
+
+    infile, outfile = args.filename, args.outfile
+
+    if outfile is None:
+        outfile = os.path.splitext(infile)[0] + '.py'
+
+    ast_gen = ASTCodeGenerator(infile)
+    ast_gen.generate_pyfile(outfile)
+
 if __name__ == "__main__":
-    import sys
-    ast_gen = ASTCodeGenerator('_c_ast.cfg')
-    ast_gen.generate(open('c_ast.py', 'w'))
+    main()
